@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	"github.com/armon/go-metrics"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/go-memdb"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/hashicorp/nomad/acl"
@@ -205,6 +206,7 @@ func (e *EventBroker) handleACLUpdates(ctx context.Context) {
 
 				aclObj, err := aclObjFromSnapshotForTokenSecretID(e.aclDelegate.TokenProvider(), e.aclCache, tokenSecretID)
 				if err != nil || aclObj == nil {
+					spew.Dump("tokenSecretID", tokenSecretID)
 					e.logger.Error("failed resolving ACL for secretID, closing subscriptions", "error", err)
 					e.subscriptions.closeSubscriptionsForTokens([]string{tokenSecretID})
 					continue
