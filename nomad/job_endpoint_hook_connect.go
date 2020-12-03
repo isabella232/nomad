@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/nomad/client/taskenv"
 	"github.com/hashicorp/nomad/helper"
 	"github.com/hashicorp/nomad/helper/uuid"
 	"github.com/hashicorp/nomad/nomad/structs"
@@ -173,7 +174,22 @@ func getNamedTaskForNativeService(tg *structs.TaskGroup, serviceName, taskName s
 // probably need to hack this up to look for checks on the service, and if they
 // qualify, configure a port for envoy to use to expose their paths.
 func groupConnectHook(job *structs.Job, g *structs.TaskGroup) error {
-	for _, service := range g.Services {
+
+	// create an environment interpolator with what we have at submission time
+	env := taskenv.NewEmptyBuilder().UpdateTask(&structs.Allocation{
+		Job:       job,
+		TaskGroup: g.Name,
+	}, nil).Build()
+
+	fmt.Println("ENV:", env)
+
+	interpolated := taskenv.InterpolateServices(env, g.Services)
+
+	for _, service := range interpolated {
+
+		// todo: interpolate here?
+		//  inspiration from the service interpolator?
+
 		switch {
 		// mutate depending on what the connect block is being used for
 

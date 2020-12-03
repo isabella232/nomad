@@ -49,6 +49,9 @@ func InterpolateServices(taskEnv *TaskEnv, services []*structs.Service) []*struc
 		service.Tags = taskEnv.ParseAndReplace(service.Tags)
 		service.CanaryTags = taskEnv.ParseAndReplace(service.CanaryTags)
 
+		// interpolate connect
+		service.Connect = interpolateConnect(taskEnv, service.Connect)
+
 		if len(service.Meta) > 0 {
 			meta := make(map[string]string, len(service.Meta))
 			for k, v := range service.Meta {
@@ -69,4 +72,52 @@ func InterpolateServices(taskEnv *TaskEnv, services []*structs.Service) []*struc
 	}
 
 	return interpolated
+}
+
+func interpolateConnect(taskEnv *TaskEnv, orig *structs.ConsulConnect) *structs.ConsulConnect {
+	if orig == nil {
+		return nil
+	}
+
+	// make one copy and interpolate the rest in-place
+	COPY := orig.Copy()
+
+	if COPY.Gateway != nil {
+		interpolateConnectGatewayProxy(taskEnv, COPY.Gateway.Proxy)
+		interpolateConnectGatewayIngress(taskEnv, COPY.Gateway.Ingress)
+	}
+
+	if COPY.SidecarService != nil {
+		//
+	}
+
+	if COPY.SidecarService != nil {
+		//
+	}
+
+	return COPY
+}
+
+func interpolateConnectGatewayProxy(taskEnv *TaskEnv, proxy *structs.ConsulGatewayProxy) {
+	if proxy == nil {
+		return
+	}
+
+	for _, address := range proxy.EnvoyGatewayBindAddresses {
+		address.Address = taskEnv.ReplaceEnv(address.Address)
+	}
+}
+
+func interpolateConnectGatewayIngress(taskEnv *TaskEnv, ingress *structs.ConsulIngressConfigEntry) {
+	if ingress == nil {
+		return
+	}
+
+	for _, listener := range ingress.Listeners {
+		listener.Protocol = taskEnv.ReplaceEnv(listener.Protocol)
+		for _, service := range listener.Services {
+			service.Name = taskEnv.ReplaceEnv(service.Name)
+			service.Hosts = taskEnv.ParseAndReplace(service.Hosts)
+		}
+	}
 }
