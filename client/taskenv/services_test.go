@@ -97,3 +97,15 @@ func TestInterpolateServices(t *testing.T) {
 
 	require.Equal(t, exp, interpolated)
 }
+
+var testEnv = NewTaskEnv(
+	map[string]string{"foo": "bar", "baz": "blah"},
+	nil,
+	nil,
+)
+
+func TestInterpolate_interpolateMapStringSliceString(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
+		require.Nil(t, interpolateMapStringSliceString(testEnv, nil))
+	})
+}

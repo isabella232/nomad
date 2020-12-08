@@ -183,17 +183,27 @@ func groupConnectHook(job *structs.Job, g *structs.TaskGroup) error {
 
 	fmt.Println("ENV:", env)
 
-	interpolated := taskenv.InterpolateServices(env, g.Services)
+	// interpolated := taskenv.InterpolateServices(env, g.Services)
+	interpolated := g.Services // eh
 
 	for _, service := range interpolated {
 
 		// todo: interpolate here?
 		//  inspiration from the service interpolator?
+		//  or rather, this will just be task name interpolation, and the normal
+		//  interpolater does its thing (connect aware) normally for all other
+		//  fields.
 
 		switch {
 		// mutate depending on what the connect block is being used for
 
 		case service.Connect.HasSidecar():
+			// pre-interpolate the connect service name, which is used to create
+			// a default task name
+			// todo: should this be a copy?
+			// todo: test this
+			service.Name = env.ReplaceEnv(service.Name)
+
 			// Check to see if the sidecar task already exists
 			task := getSidecarTaskForService(g, service.Name)
 
@@ -249,6 +259,12 @@ func groupConnectHook(job *structs.Job, g *structs.TaskGroup) error {
 			}
 
 		case service.Connect.IsGateway():
+			// pre-interpolate the connect service name, which is used to create
+			// a default task name
+			// todo: should this be a copy?
+			// todo: test this
+			service.Name = env.ReplaceEnv(service.Name)
+
 			netHost := g.Networks[0].Mode == "host"
 			if !netHost && service.Connect.Gateway.Ingress != nil {
 				// Modify the gateway proxy service configuration to automatically
