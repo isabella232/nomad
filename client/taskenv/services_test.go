@@ -13,6 +13,7 @@ import (
 // and check fields are properly interpolated.
 func TestInterpolateServices(t *testing.T) {
 	t.Parallel()
+
 	services := []*structs.Service{
 		{
 			Name:      "${name}",
@@ -107,22 +108,26 @@ var testEnv = NewTaskEnv(
 )
 
 func TestInterpolate_interpolateMapStringSliceString(t *testing.T) {
+	t.Parallel()
+
 	t.Run("nil", func(t *testing.T) {
 		require.Nil(t, interpolateMapStringSliceString(testEnv, nil))
 	})
 
 	t.Run("not nil", func(t *testing.T) {
 		require.Equal(t, map[string][]string{
-			"a":   []string{"b"},
-			"bar": []string{"blah", "c"},
+			"a":   {"b"},
+			"bar": {"blah", "c"},
 		}, interpolateMapStringSliceString(testEnv, map[string][]string{
-			"a":      []string{"b"},
-			"${foo}": []string{"${baz}", "c"},
+			"a":      {"b"},
+			"${foo}": {"${baz}", "c"},
 		}))
 	})
 }
 
 func TestInterpolate_interpolateMapStringString(t *testing.T) {
+	t.Parallel()
+
 	t.Run("nil", func(t *testing.T) {
 		require.Nil(t, interpolateMapStringString(testEnv, nil))
 	})
@@ -139,6 +144,8 @@ func TestInterpolate_interpolateMapStringString(t *testing.T) {
 }
 
 func TestInterpolate_interpolateMapStringInterface(t *testing.T) {
+	t.Parallel()
+
 	t.Run("nil", func(t *testing.T) {
 		require.Nil(t, interpolateMapStringInterface(testEnv, nil))
 	})
@@ -155,6 +162,8 @@ func TestInterpolate_interpolateMapStringInterface(t *testing.T) {
 }
 
 func TestInterpolate_interpolateConnect(t *testing.T) {
+	t.Parallel()
+
 	env := NewTaskEnv(map[string]string{
 		"tag1":         "_tag1",
 		"port1":        "12345",
@@ -272,7 +281,7 @@ func TestInterpolate_interpolateConnect(t *testing.T) {
 				ConnectTimeout:                  helper.TimeToPtr(3 * time.Second),
 				EnvoyGatewayBindTaggedAddresses: true,
 				EnvoyGatewayBindAddresses: map[string]*structs.ConsulGatewayBindAddress{
-					"${bind1}": &structs.ConsulGatewayBindAddress{
+					"${bind1}": {
 						Address: "${address2}",
 						Port:    8000,
 					},
@@ -327,7 +336,7 @@ func TestInterpolate_interpolateConnect(t *testing.T) {
 			},
 		},
 		SidecarTask: &structs.SidecarTask{
-			Name:   "name", // not interpolated by taskenv
+			Name:   "name", // not interpolated by InterpolateServices
 			Driver: "_driver1",
 			User:   "_user1",
 			Config: map[string]interface{}{"_config2": 2},
@@ -379,7 +388,7 @@ func TestInterpolate_interpolateConnect(t *testing.T) {
 				ConnectTimeout:                  helper.TimeToPtr(3 * time.Second),
 				EnvoyGatewayBindTaggedAddresses: true,
 				EnvoyGatewayBindAddresses: map[string]*structs.ConsulGatewayBindAddress{
-					"_bind1": &structs.ConsulGatewayBindAddress{
+					"_bind1": {
 						Address: "10.0.0.4",
 						Port:    8000,
 					},
