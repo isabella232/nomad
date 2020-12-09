@@ -105,9 +105,16 @@ func interpolateConnectGatewayProxy(taskEnv *TaskEnv, proxy *structs.ConsulGatew
 		return
 	}
 
-	for _, address := range proxy.EnvoyGatewayBindAddresses {
-		address.Address = taskEnv.ReplaceEnv(address.Address)
+	m := make(map[string]*structs.ConsulGatewayBindAddress, len(proxy.EnvoyGatewayBindAddresses))
+	for k, v := range proxy.EnvoyGatewayBindAddresses {
+		m[taskEnv.ReplaceEnv(k)] = &structs.ConsulGatewayBindAddress{
+			Address: taskEnv.ReplaceEnv(v.Address),
+			Port:    v.Port,
+		}
 	}
+
+	proxy.EnvoyGatewayBindAddresses = m
+	proxy.Config = interpolateMapStringInterface(taskEnv, proxy.Config)
 }
 
 func interpolateConnectGatewayIngress(taskEnv *TaskEnv, ingress *structs.ConsulIngressConfigEntry) {
@@ -140,6 +147,11 @@ func interpolateConnectSidecarService(taskEnv *TaskEnv, sidecar *structs.ConsulS
 				sidecar.Proxy.Expose.Paths[i].Path = taskEnv.ReplaceEnv(sidecar.Proxy.Expose.Paths[i].Path)
 			}
 		}
+		for i := 0; i < len(sidecar.Proxy.Upstreams); i++ {
+			sidecar.Proxy.Upstreams[i].Datacenter = taskEnv.ReplaceEnv(sidecar.Proxy.Upstreams[i].Datacenter)
+			sidecar.Proxy.Upstreams[i].DestinationName = taskEnv.ReplaceEnv(sidecar.Proxy.Upstreams[i].DestinationName)
+		}
+		sidecar.Proxy.Config = interpolateMapStringInterface(taskEnv, sidecar.Proxy.Config)
 	}
 }
 
