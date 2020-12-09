@@ -175,33 +175,24 @@ func getNamedTaskForNativeService(tg *structs.TaskGroup, serviceName, taskName s
 // qualify, configure a port for envoy to use to expose their paths.
 func groupConnectHook(job *structs.Job, g *structs.TaskGroup) error {
 
-	// create an environment interpolator with what we have at submission time
+	// Create an environment interpolator with what we have at submission time.
+	// This should only be used to interpolate connect service names which are
+	// used in sidecar or gateway task names.
 	env := taskenv.NewEmptyBuilder().UpdateTask(&structs.Allocation{
 		Job:       job,
 		TaskGroup: g.Name,
 	}, nil).Build()
 
-	fmt.Println("ENV:", env)
+	m := env.All()
+	fmt.Println("aaa:", m)
 
-	// interpolated := taskenv.InterpolateServices(env, g.Services)
-	interpolated := g.Services // eh
-
-	for _, service := range interpolated {
-
-		// todo: interpolate here?
-		//  inspiration from the service interpolator?
-		//  or rather, this will just be task name interpolation, and the normal
-		//  interpolater does its thing (connect aware) normally for all other
-		//  fields.
-
+	for _, service := range g.Services {
 		switch {
 		// mutate depending on what the connect block is being used for
 
 		case service.Connect.HasSidecar():
-			// pre-interpolate the connect service name, which is used to create
-			// a default task name
-			// todo: should this be a copy?
-			// todo: test this
+			// interpolate the connect service name, which is used to create
+			// a name of an injected sidecar task
 			service.Name = env.ReplaceEnv(service.Name)
 
 			// Check to see if the sidecar task already exists
@@ -259,10 +250,8 @@ func groupConnectHook(job *structs.Job, g *structs.TaskGroup) error {
 			}
 
 		case service.Connect.IsGateway():
-			// pre-interpolate the connect service name, which is used to create
-			// a default task name
-			// todo: should this be a copy?
-			// todo: test this
+			// interpolate the connect service name, which is used to create
+			// a name of an injected gateway task
 			service.Name = env.ReplaceEnv(service.Name)
 
 			netHost := g.Networks[0].Mode == "host"

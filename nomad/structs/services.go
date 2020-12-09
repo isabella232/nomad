@@ -460,6 +460,7 @@ func (s *Service) Canonicalize(job string, taskGroup string, task string) {
 		s.Checks = nil
 	}
 
+	// TODO maybe jjust replace here?
 	s.Name = args.ReplaceEnv(s.Name, map[string]string{
 		"JOB":       job,
 		"TASKGROUP": taskGroup,
